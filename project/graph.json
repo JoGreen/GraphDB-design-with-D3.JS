@@ -1,0 +1,15 @@
+schema={
+"nodes":[
+{"type":"erd.WeakEntity","text":"Comment","width":100,"attr":[{"text":"ExternalLink.eid"},{"text":"ExternalLink.url"},{"text":" Comment.cid"},{"text":" Comment.msg"}],"id":0},
+{"type":"erd.Entity","text":"User","width":100,"attr":[{"text":"User.uid"},{"text":"User.uname"}],"id":1},
+{"type":"erd.Entity","text":"Blog","width":100,"attr":[{"text":"Blog.bid"},{"text":"Blog.bname"},{"text":"Category.ctid"},{"text":" Category.description"}],"id":2}
+],
+"links":[
+{"type":"link","source":0,"target":1,"kind":"end-arrow","labels":["date","label"]},
+{"type":"link_2","source":0,"target":1,"kind":"no-arrow","labels":["label"]},
+{"type":"link","source":1,"target":2,"kind":"no-arrow","labels":["label"]},
+{"type":"link_2","source":2,"target":1,"kind":"end-arrow","labels":["label"]},
+{"type":"link","source":0,"target":2,"kind":"end-arrow","labels":["label"]},
+]
+}
+

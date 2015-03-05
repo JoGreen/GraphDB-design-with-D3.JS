@@ -1,0 +1,41 @@
+
+schema={
+"nodes":[
+
+{"type":"erd.WeakEntity","text":"Comment","width":100,"id":0},
+{"type":"erd.Entity","text":"External link","width":100,"id":1},
+{"type":"erd.Entity","text":"User","width":100,"id":2},
+{"type":"erd.Entity","text":"Blog","width":100,"id":3},
+{"type":"erd.key","text":"Cid","width":50,"id":4},
+{"type":"erd.key","text":"Eid","width":50,"id":5},
+{"type":"erd.key","text":"Uid","width":50,"id":6},
+{"type":"erd.key","text":"Bid","width":50,"id":7},
+{"type":"erd.key","text":"CTid","width":50,"id":8},
+{"type":"erd.normal","text":"date","width":50,"id":9},
+{"type":"erd.normal","text":"msg","width":50,"id":10},
+{"type":"erd.normal","text":"Uname","width":50,"id":11},
+{"type":"erd.normal","text":"Bname","width":50,"id":12},
+{"type":"erd.normal","text":"description","width":50,"id":13},
+{"type":"erd.Entity","text":"Category","width":100,"id":14}
+],
+"links":[
+{"type":"link","source":0,"target":4,"kind":"no-arrow", "labels":[],"group":0},
+{"type":"link","source":0,"target":10,"kind":"no-arrow", "labels":[],"group":0},
+{"type":"link","source":0,"target":9,"kind":"no-arrow", "labels":[],"group":0},
+{"type":"link","source":1,"target":5,"kind":"no-arrow", "labels":[],"group":0},
+{"type":"link","source":2,"target":6,"kind":"no-arrow","labels":[],"group":0},
+{"type":"link","source":2,"target":11,"kind":"no-arrow","labels":[],"group":0},
+{"type":"link","source":3,"target":7,"kind":"no-arrow" ,"labels":[],"group":0},
+{"type":"link","source":3,"target":12,"kind":"no-arrow","labels":[],"group":0},
+{"type":"link","source":14,"target":8,"kind":"no-arrow","labels":[],"group":0},
+{"type":"link","source":14,"target":13,"kind":"no-arrow" ,"labels":[],"group":0},
+{"type":"link","source":0,"target":1,"kind":"no-arrow","labels":["contains:0"],"group":1},
+{"type":"link","source":0,"target":2,"kind":"end-arrow","labels":["post:1"],"group":0},
+{"type":"link_2","source":0,"target":2,"kind":"no-arrow","labels":["tag:2"],"group":0},
+{"type":"link","source":0,"target":3,"kind":"no-arrow","labels":["publish:1"],"group":0},
+{"type":"link","source":0,"target":9,"kind":"no-arrow","labels":[],"group":0},
+{"type":"link","source":2,"target":3,"kind":"no-arrow","labels":["follower:2"],"group":0},
+{"type":"link_2","source":3,"target":2,"kind":"end-arrow","labels":["admin:1"],"group":0},
+{"type":"link","source":3,"target":14,"kind":"end-arrow","labels":["about:1"],"group":1}
+]
+}

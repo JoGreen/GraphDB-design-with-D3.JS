@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+ 	<title>OER diagram</title>
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="esempioJSON.json"></script>
+<style>
+
+body{
+	background-color:WhiteSmoke;
+}
+
+svg{
+	background-color:GhostWhite;
+}
+
+a{
+	position:absolute;
+		top:86px;
+		right:20px;
+}
+
+#forward{
+	background-color: #f1c40f;
+	padding: 12px 18px 13px;
+    line-height: 13px;
+    border: 3px solid #008B8B;
+	color: white;
+    font-size: 18px;
+	text-shadow: none;
+	cursor: pointer;
+    border-radius: 5px;
+    display: block;
+    text-decoration: none;
+    float: right;
+    width: 200px;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+.link {
+  stroke: #000;
+  stroke-width: 2.5px;
+}
+
+
+.node {
+  cursor: move;
+  fill: #ccc;
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.Entity{
+	cursor: move;
+	fill: green;
+  	stroke: #000;
+ 	stroke-width: 1.5px;
+}
+
+.WeakEntity{
+	cursor: move;
+	fill: green;
+  	stroke: #000;
+ 	stroke-width: 0.5px;
+}
+
+
+.key{
+	cursor: move;
+	fill: orange;
+  	stroke: #000;
+ 	stroke-width: 1.5px;
+}
+
+.normal{
+	cursor: move;
+	fill: orange;
+  	stroke: #000;
+ 	stroke-width: 0.5px;
+}
+
+.node.fixed {
+  fill: #f00;
+}
+
+text {
+  font: 12px sans-serif;
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+.TEXT1 {
+  font: 14px sans-serif;
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+
+
+
+</style>
+<body>
+	<h1>Welcome in your second step</h1>
+	<h2>This graph rapresents the Oriented E-R diagram</h2>
+	<a href="javascript:faq()">What is a Oriented ER diagram ?</a>
+	<form action="partitioningOER.html">
+		<button type="submit" id="forward">Next step</button>
+	</form>
+	
+	<script>
+
+var width = 1560,
+    height = 1200,
+    distance = 170;
+
+var force = d3.layout.force()
+    .size([width, height])
+    .charge(-4800)  // se per grafi piu grandi all inizio si sovrappongono i nodi aumenta questo valore ancora fino a raggiungere il risultato voluto
+    .linkDistance(function(l) { return l.target.type==="erd.normal" || l.target.type==="erd.key" ? distance*0.4 : distance*1.3;})
+    .on("tick", tick);
+
+var drag = force.drag()
+    .on("dragstart", dragstart);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+    
+    svg.append('svg:defs').append('svg:marker')
+    .attr('id', 'end-arrow')
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', 6)
+    .attr('markerWidth', 4)
+    .attr('markerHeight', 5)
+    .attr('orient', 'auto')
+  .append('svg:path')
+    .attr('d', 'M0,-5L10,0L0,5')
+   // .attr('d', 'M0,-10L20,0L0,10')
+    //.attr("d","M 0 0 L 10 5 L 0 10 z")
+    .attr('fill', '#000');
+    
+/*  svg.append('svg:defs').append('svg:marker')
+    .attr('id', 'end-arrow')
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', 6)
+    .attr('markerWidth', 3)
+    .attr('markerHeight', 3)
+    .attr('orient', 'auto')
+  .append('svg:path')
+    .attr('d', 'M0,-5L10,0L0,5')
+    .attr('fill', '#000');
+    
+    svg.append('svg:defs').append('svg:marker')
+    .attr('id', 'no-arrow')
+   .attr('viewBox', '0 -5 10 10')
+    .attr('refX', 6)
+    .attr('markerWidth', 3)
+    .attr('markerHeight', 3)
+    .attr('orient', 'auto')
+  .append('svg:path')
+    .attr('d', 'M0,-5L10,0L0,5')
+    .attr('fill', '#000'); */
+
+var link = svg.selectAll(".link"),
+    node = svg.selectAll(".node"),
+    mygraph=schema;
+
+force
+      .nodes(mygraph.nodes)
+      .links(mygraph.links)
+      .start();
+      
+    
+link=svg.append("g").selectAll("path")
+    .data(force.links())
+  .enter().append("path")
+    .attr("class", function(d){var x=d.type.split("_");return x[0];})
+    .style("marker-end",  function(d) { return "url(#" + d.kind + ")"; });
+    //.style("marker-end", "url(#end-arrow)");
+    
+
+var label=svg.append("g").selectAll("text")
+	.data(force.links())
+   .enter().append("text")
+   // .attr("white-space","normal")
+   	.attr("class","labels")
+	.html(function(d){
+  			if(d.labels.length > 0){
+  				var i=0;
+  				var string="<tspan class=\"label\" >";
+  				for(var label of d.labels){
+  					if(i===0){string+=label+"</tspan>";}
+  					else{string+="<tspan class=\"label\" dy="+ 13 +" dx=-"+ 5.05*d.labels[i-1].length +" >"+label+"</tspan>";}
+  					i++;
+  				}return string;
+  			}
+  		});
+
+      
+var rect = svg.append("g").selectAll("rect")
+    .data(force.nodes())
+  .enter().append("rect")
+      .attr("class",function(d){var x=d.type.split(".");return x[1];})
+      .attr("width", function(d){return d.width;})
+      .attr("height", function(d){return d.width/2;})
+    .on("dblclick", dblclick)
+    .call(drag);
+
+
+
+
+var text = svg.append("g").selectAll("text")
+    .data(force.nodes())
+  .enter().append("text")
+  	.attr("class","TEXT1")
+    .text(function(d) { return d.text; });
+
+
+ function Yintersection(d){ // calcola anche il coeff angolare del link oltre alla coordinata y del target
+		var dx = d.target.x+d.target.width/2 - d.source.x-d.source.width/2,
+      		dy = d.target.y+d.target.width/4 - d.source.y-d.source.width/4,
+      		y2 = d.target.y + d.width/4,
+      		y=0,
+      		mpos,m;
+      		var mdiag= 0.5;  // varia solo se cambia il rapporto altezza larghezza delle rect
+  		if(dx === 0){return (d.source.y<d.target.y) ? d.target.y : d.target.y+d.target.width/2;}
+  		if(dy === 0){return d.target.y + d.target.width/4;}
+  		if(dx !== 0 && dy !== 0){
+  		  	m = dy/dx;
+  			mpos=Math.abs(m);
+  			if ((mdiag > m) && (m > (-1) * mdiag)){
+  				y =(d.source.x < d.target.x) ?  y2-m*(d.target.width/2) : y2+m*(d.target.width/2); 
+  				//else{y = y2+m*(d.target.width/2);}
+  			}
+  			else{
+  				y = (d.source.y < d.target.y) ? d.target.y : d.target.y+d.target.width/2;
+  			}
+  			return {"y":y,"m":m};
+		}
+  	}
+  	
+  	 
+  	 
+function linkArc(d) {  //sistemala per la rect
+  var dx = d.target.x - d.source.x,
+      dy = d.target.y - d.source.y,
+      dr = Math.sqrt(dx * dx + dy * dy),
+      dxtarget,dytarget,xsource,ysource,q,m;
+  
+ 
+  /* if((d.source.x < d.target.x)&&(d.source.y < d.target.y)){dxtarget=d.target.x-d.target.width/3+d.target.width/15;dytarget=d.target.y-d.target.width/3+d.target.width/15}
+   if((d.source.x < d.target.x)&&(d.source.y === d.target.y)){dxtarget=d.target.x-d.target.width/3+d.target.width/15;dytarget=d.target.y}
+   if((d.source.x < d.target.x)&&(d.source.y > d.target.y)){dxtarget=d.target.x-d.target.width/3+d.target.width/15;dytarget=d.target.y+d.target.width/3-d.target.width/15}
+   if((d.source.x > d.target.x)&&(d.source.y === d.target.y)){dxtarget=d.target.x+d.target.width/3-d.target.width/15;dytarget=d-target.y}
+   if((d.source.x > d.target.x)&&(d.source.y < d.target.y)){dxtarget=d.target.x+d.target.width/3-d.target.width/15;dytarget=d.target.y-d.target.width/3+d.target.width/15}
+   if((d.source.x > d.target.x)&&(d.source.y > d.target.y)){dxtarget=d.target.x+d.target.width/3-d.target.width/15;dytarget=d.target.y+d.target.width/3-d.target.width/15}
+    */
+    
+   /*if((d.source.x < d.target.x)&&(d.source.y < d.target.y)){dxtarget=d.target.x;dytarget=d.target.y+d.target.width/4;}
+   if((d.source.x < d.target.x)&&(d.source.y === d.target.y)){dxtarget=d.target.x;dytarget=d.target.y+d.target.width/4;}
+   if((d.source.x < d.target.x)&&(d.source.y > d.target.y)){dxtarget=d.target.x;dytarget=d.target.y+d.target.width/4;}
+   if((d.source.x > d.target.x)&&(d.source.y === d.target.y)){dxtarget=d.target.x;dytarget=d.target.y+d.target.width/4;}
+   if((d.source.x > d.target.x)&&(d.source.y < d.target.y)){dxtarget=d.target.x+d.target.width;dytarget=d.target.y+d.target.width/4;}
+   if((d.source.x > d.target.x)&&(d.source.y > d.target.y)){dxtarget=d.target.x+d.target.width;dytarget=d.target.y+d.target.width/4;}
+   var ysource= d.source.y + d.source.width/4; */
+   dytarget=Yintersection(d);
+   if(d.source.x+d.source.width/2 === d.target.x+d.target.width/2) {dxtarget=d.target.x+d.target.width/2;}  
+   
+   else{q = d.target.y+d.target.width/4 - dytarget.m * (d.target.x+d.target.width/2); m=dytarget.m}
+   if((d.source.x+d.source.width/2 < d.target.x+d.target.width/2)&&(dytarget.m <= 0.5) && (dytarget.m >= -0.5)) {dxtarget=d.target.x;}
+   if((d.source.x+d.source.width/2 < d.target.x+d.target.width/2)&& (dytarget.m > 0.5)) {dxtarget=(dytarget.y-q)/m;}
+   if((d.source.x+d.source.width/2 < d.target.x+d.target.width/2)&& (dytarget.m < -0.5) ) {dxtarget=(dytarget.y-q)/m;}
+   
+   if((d.source.x+d.source.width/2 > d.target.x+d.target.width/2)&& (dytarget.m <= 0.5) && (dytarget.m >= -0.5)) {dxtarget=d.target.x+d.target.width;}
+   if((d.source.x+d.source.width/2 > d.target.x+d.target.width/2)&& (dytarget.m > 0.5) ) {dxtarget=(dytarget.y-q)/m;}
+   if((d.source.x+d.source.width/2 > d.target.x+d.target.width/2)&& (dytarget.m < -0.5) ) {dxtarget=(dytarget.y-q)/m;}
+   
+   /*if((d.source.x > d.target.x)&&(d.source.y < d.target.y)){dxtarget=d.target.x+d.target.width;dytarget=Yintersection(d);}
+   if((d.source.x > d.target.x)&&(d.source.y > d.target.y)){dxtarget=d.target.x+d.target.width;dytarget=Yintersection(d);}  */
+   
+   ysource= d.source.y + d.source.width/4; 
+   xsource=d.source.width/2+d.source.x;
+  //return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+//  if((dytarget.y-ysource)/(dxtarget-xsource) === m){
+  	return "M"+xsource + "," + ysource + "L" + dxtarget + "," + dytarget.y;//}
+}	
+
+function buildLink(d){
+	var ysource= d.source.y + d.source.width/4,
+		xsource=d.source.width/2+d.source.x,
+		dxtarget=d.target.x+d.target.width/2,
+		dytarget=d.target.y+d.target.width/4,
+		m,q,XX,YY,XXX,YYY,padding,spessore;
+	padding = (d.kind === "end-arrow") ? 4 : 0;
+	spessore = (d.type === "link_2") ? 40 : 0;
+	if(dxtarget-xsource === 0){YY=dytarget-d.target.width/4 - padding;YYY=dytarget+d.target.width/4 + padding;
+		return (d.source.y<dytarget) ? "M"+xsource + "," + ysource + "L" + dxtarget + "," + YY :  "M"+xsource + "," + ysource + "L" + dxtarget + "," + YYY;
+	}
+	else{
+		m= (dytarget-ysource)/(dxtarget-xsource);
+		if(m===0){XX=dxtarget-d.target.width/2 - padding; XXX=dxtarget+d.target.width/2 + padding;dytarget += spessore
+			return (d.source.x<dxtarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + dytarget :  "M"+xsource + "," + ysource + "L" + XXX + "," + dytarget;}
+		if(m > 0){
+			if(m <= 0.5){
+				XX=dxtarget-d.target.width/2 - padding ; XXX=dxtarget+d.target.width/2 + padding ; 
+				YY=dytarget-m*d.target.width/2 + spessore; YYY=dytarget + m*d.target.width/2 + spessore;
+				return (d.source.x<dxtarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + YY :  "M"+xsource + "," + ysource + "L" + XXX + "," + YYY;}
+			else{
+				q=dytarget-m*dxtarget;
+				XX=(dytarget-d.target.width/4 -q)/m + spessore; XXX=(dytarget+d.target.width/4 -q)/m + spessore ; 
+				YY= dytarget-d.target.width/4 - padding ; YYY=dytarget+d.target.width/4 + padding ; 
+				return (d.source.y<dytarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + YY :  "M"+xsource + "," + ysource + "L" + XXX + "," + YYY;}
+			}
+		if(m < 0){
+			if(m >= -0.5){
+				XX=dxtarget-d.target.width/2 - padding ; XXX=dxtarget+d.target.width/2  + padding; 
+				YY=dytarget-m*d.target.width/2 - spessore ; YYY=dytarget+m*d.target.width/2 + spessore;
+				return (d.source.x<dxtarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + YY :  "M"+xsource + "," + ysource + "L" + XXX + "," + YYY}
+			else{q=dytarget - m*dxtarget;
+				XX=(dytarget-d.target.width/4 -q)/m  - spessore; XXX=(dytarget+d.target.width/4 -q)/m + spessore; 
+				YY=dytarget-d.target.width/4 - padding ; YYY=dytarget+d.target.width/4 + padding;  //(dytarget-d.target.width/4 -q)/m
+				return (d.source.y<dytarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + YY :  "M"+xsource + "," + ysource + "L" + XXX + "," + YYY;}
+			}
+	}
+}
+
+
+function tick() {
+  link
+  	  .attr("d",buildLink);
+    
+      
+ label .attr("x", function(d) {
+ 	//		var split = d.d.split("L");
+ 	//		split = 
+ 			var spess= (d.type === "link_2") ? 50 : 0;
+   			var x= d.source.x< d.target.x  ? (d.target.x-d.source.x)/2+d.source.x + spess: (d.source.x-d.target.x)/2+d.target.x + spess;
+   			return x; })
+      .attr("y", function(d) {
+      		var spess= (d.type === "link_2") ? 30 : 0; 
+      		var y=d.source.y< d.target.y  ? (d.target.y-d.source.y)/2+d.source.y - spess : (d.source.y-d.target.y)/2+d.target.y + spess ;
+      		return y; });
+
+  rect.attr("x", function(d) { return d.x; })
+      .attr("y", function(d) { return d.y; });
+	
+	text.attr("x", function(d) { return d.x+d.width*0.20; })
+      .attr("y", function(d) { return d.y+d.width/4; });
+      
+}
+
+function dblclick(d) {
+  d3.select(this).classed("fixed", d.fixed = false);
+}
+
+function dragstart(d) {
+  d3.select(this).classed("fixed", d.fixed = true);
+}
+
+function faq(){
+	var faq="In the first phase,your second step, we transform an ER diagram, which is an undirected and labelled graph, into a directed, labelled and weighted graph, called Oriented ER (O-ER) diagram ";
+	alert(faq);
+}
+
+
+
+</script>

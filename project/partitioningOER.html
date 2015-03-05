@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+ 	<title>partitioning OER diagram</title>
+ 	<script src="jquery.min.js"></script> 
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="partitioning.json"></script>
+	<script src="FileSaver.js"></script>
+<style>
+
+body{
+	background-color:WhiteSmoke;
+}
+
+svg{
+	background-color:GhostWhite;
+}
+
+a{
+	position:absolute;
+		top:86px;
+		right:20px;
+}
+
+#forward{
+	background-color: #f1c40f;
+	padding: 12px 18px 13px;
+    line-height: 13px;
+    border: 3px solid #008B8B;
+	color: white;
+    font-size: 18px;
+	text-shadow: none;
+	cursor: pointer;
+    border-radius: 5px;
+    display: block;
+    text-decoration: none;
+    float: right;
+    width: 200px;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+#btn-download{
+	background-color: #f1c40f;
+	padding: 8px 14px 17px;
+    line-height: 13px;
+    border: 2px solid #008B8B;
+	color: white;
+    font-size: 10px;
+	text-shadow: none;
+	cursor: pointer;
+    border-radius: 5px;
+    display: block;
+    text-decoration: none;
+    float: left;
+    width: 80px;
+    height: 16px;
+}
+
+.link {
+	cursor: move;
+  	stroke: red;
+  	stroke-width: 2.0px;
+}
+
+.link.grouped{
+	stroke: purple;
+	stroke-width: 3.5px;
+}
+
+
+.node {
+  cursor: move;
+  fill: #ccc;
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.Entity{
+	cursor: move;
+	fill: green;
+  	stroke: #000;
+ 	stroke-width: 1.5px;
+}
+
+.Entity.fixed{
+	cursor: move;
+	fill: green;
+  	stroke: red;
+ 	stroke-width: 1.5px;
+}
+ 
+
+.WeakEntity{
+	cursor: move;
+	fill: green;
+  	stroke: #000;
+ 	stroke-width: 0.5px;
+}
+
+.WeakEntity.fixed{
+	cursor: move;
+	fill: green;
+  	stroke: red;
+ 	stroke-width: 1px;
+}
+
+
+.key{
+	cursor: move;
+	fill: orange;
+  	stroke: #000;
+ 	stroke-width: 1.5px;
+}
+
+.normal{
+	cursor: move;
+	fill: orange;
+  	stroke: #000;
+ 	stroke-width: 0.5px;
+}
+
+.node.fixed {
+  fill: #f00;
+}
+
+text {
+  font: 10px sans-serif;
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+.TEXT1 {
+  font: 15px sans-serif;
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+</style>
+
+</head>
+
+<body>
+	<h1>Welcome in your third step</h1>
+	<h2>This graph shows the partitioned OER diagram we recommend</h2>
+	<a href="javascript:faq()">What is a partitioned Oriented ER diagram ?</a>
+	
+	<button type="submit" id="forward">Next step</button>
+	<button id="btn-download" class="btn">Download</button>
+	<button id="rendering" class="btn">Upload</button>
+	<input id="inputJson" type="file" name="inputFile" class="upload">
+	
+	<svg>
+		
+  </svg>
+	
+	<script>
+
+
+
+var width = schema.nodes.length *100,
+    height = schema.nodes.length *80,
+    distance=210;
+
+var svg = d3.select("svg")
+    .attr("width", width)
+    .attr("height", height);
+    
+    
+    var defs = svg.append('svg:defs');
+    
+    defs.append('svg:marker')
+    .attr('id', 'end-arrow')
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', 6)
+    .attr('markerWidth', 3)
+    .attr('markerHeight', 4)
+    .attr('orient', 'auto')
+  .append('svg:path')
+    .attr('d', 'M0,-5L10,0L0,5')
+    .attr('fill', '#000');
+    
+    
+
+
+var link = svg.selectAll(".link"),
+	rect = svg.selectAll("rect"),
+	label= svg.selectAll(".label"),
+	text = svg.selectAll(".TEXT1");
+  
+    
+var graph=svg.append("g");
+var mygraph=schema;
+var force = d3.layout.force()
+    .size([width, height])
+    .charge(-4800)  // se per grafi piu grandi all inizio si sovrappongono i nodi aumenta questo valore ancora fino a raggiungere il risultato voluto
+    .linkDistance(function(l) { 
+    			if((l.target.type !== "erd.key") && (l.target.type !== "erd.normal" )){return l.group === 0 ? distance*1.1 : distance*0.3;}
+				if((l.target.type === "erd.key") || (l.target.type === "erd.normal" )){return distance*0.03;}
+				})
+    .on("tick", tick);
+
+var drag = force.drag()
+    .on("dragstart", dragstart);
+    
+    update(force);
+    
+/*force
+    .nodes(mygraph.nodes)
+	.links(mygraph.links)
+    .linkDistance(function(l) {
+      		if((l.target.type !== "erd.key") && (l.target.type!=="erd.normal")){return l.group === 0 ? distance*1.1 : distance*0.3;}
+			else{return distance*0.0015;}
+   		})  ;
+      //.start();
+   var link=graph.selectAll("path"),rect=graph.selectAll("rect"),text=graph.selectAll("text"),l=[],n=[];  
+   
+   */
+   
+//function update(){ 
+/*force
+      .nodes(n)
+      .links(l) 
+      .start();
+      
+	link=svg.append("g").selectAll("path")
+    	.data(force.links());
+    link.exit().remove();
+     rect = svg.append("g").selectAll("rect")
+   		.data(force.nodes());
+   	rect.exit().remove();
+   	text = svg.append("g").selectAll("text")
+    	.data(force.nodes());
+    text.exit().remove(); */
+      
+      /*
+force
+      .nodes(mygraph.nodes)
+      .links(mygraph.links);
+      //.start();
+       
+ link=link
+    .data(force.links());
+    
+ link.enter().append("path")
+    .attr("class", "link ")
+    .style("marker-end",  function(d) { return "url(#" + d.kind + ")"; })
+    .on("dblclick", dbclickLink)
+    .on("click", onclickLink);
+
+ link.exit().remove();
+ 
+ var label=svg.append("g").selectAll("text")
+	.data(force.links())
+   .enter().append("text")
+   // .attr("white-space","normal")
+   	.attr("class","labels")
+	.html(function(d){
+  			if(d.labels.length > 0){
+  				var i=0;
+  				var string="<tspan class=\"label\" >";
+  				for(var label of d.labels){
+  					if(i===0){string+=label+"</tspan>";}
+  					else{string+="<tspan class=\"label\" dy="+ 13 +" dx=-"+ 5.05*d.labels[i-1].length +" >"+label+"</tspan>";}
+  					i++;
+  				}return string;
+  			}
+  		});
+      
+ rect = rect
+    .data(force.nodes());
+  
+ rect.enter().append("rect")
+      .attr("class",function(d){var x=d.type.split(".");return x[1];})
+      .attr("width", function(d){return d.width;})
+      .attr("height", function(d){return d.width/2;})
+    .on("dblclick", dblclick)
+    .call(drag);
+
+rect.exit().remove();
+
+ text = text
+    .data(force.nodes());
+
+ text.enter().append("text")
+ 	.attr("class","TEXT1")
+    .text(function(d) { return d.text; });
+    
+ text.exit().remove();
+
+force.start();  */
+   //}   
+    
+
+
+
+function linkArc(d) {  // questa funzione non viene utilizzata
+  var dxtarget,dytarget,distx,disty;
+   
+   if((d.source.x < d.target.x)&&(d.source.y < d.target.y)){dxtarget=d.target.x-d.target.width/3+d.target.width/15;dytarget=d.target.y-d.target.width/3+d.target.width/15}
+   if((d.source.x < d.target.x)&&(d.source.y === d.target.y)){dxtarget=d.target.x-d.target.width/3+d.target.width/15;dytarget=d.target.y}
+   if((d.source.x < d.target.x)&&(d.source.y > d.target.y)){dxtarget=d.target.x-d.target.width/3+d.target.width/15;dytarget=d.target.y+d.target.width/3-d.target.width/15}
+   if((d.source.x > d.target.x)&&(d.source.y === d.target.y)){dxtarget=d.target.x+d.target.width/3-d.target.width/15;dytarget=d-target.y}
+   if((d.source.x > d.target.x)&&(d.source.y < d.target.y)){dxtarget=d.target.x+d.target.width/3-d.target.width/15;dytarget=d.target.y-d.target.width/3+d.target.width/15}
+   if((d.source.x > d.target.x)&&(d.source.y > d.target.y)){dxtarget=d.target.x+d.target.width/3-d.target.width/15;dytarget=d.target.y+d.target.width/3-d.target.width/15}
+      
+  //return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+  	return "M"+d.source.x + "," +d.source.y + "L" + dxtarget + "," + dytarget;
+  	
+  /*	var t1x =(dxtarget-d.source.x)*0.3;
+  	var t1y = (dytarget-d.source.y)*0.3;
+  	var xspezz = d.target.x - d.source.x;
+  	var t3456x = xspezz/5;
+  	var t27x = t3456x/2;
+  	  	"M"+d.source.x + "," +d.source.y + "L" + t1x + "," + t1y + "L" + t1x+      */
+}
+
+
+function buildLink(d){
+	var ysource= d.source.y + d.source.width/4,
+		xsource=d.source.width/2+d.source.x,
+		dxtarget=d.target.x+d.target.width/2,
+		dytarget=d.target.y+d.target.width/4,
+		m,q,XX,YY,XXX,YYY,padding,spessore;
+	padding = (d.kind === "end-arrow") ? 4 : 0;
+	spessore = (d.type === "link_2") ? 40 : 0;
+	if(dxtarget-xsource === 0){YY=dytarget-d.target.width/4 - padding;YYY=dytarget+d.target.width/4 + padding;
+		return (d.source.y<dytarget) ? "M"+xsource + "," + ysource + "L" + dxtarget + "," + YY :  "M"+xsource + "," + ysource + "L" + dxtarget + "," + YYY;
+	}
+	else{
+		m= (dytarget-ysource)/(dxtarget-xsource);
+		if(m===0){XX=dxtarget-d.target.width/2 - padding; XXX=dxtarget+d.target.width/2 + padding;dytarget += spessore
+			return (d.source.x<dxtarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + dytarget :  "M"+xsource + "," + ysource + "L" + XXX + "," + dytarget;}
+		if(m > 0){
+			if(m <= 0.5){
+				XX=dxtarget-d.target.width/2 - padding ; XXX=dxtarget+d.target.width/2 + padding ; 
+				YY=dytarget-m*d.target.width/2 + spessore; YYY=dytarget + m*d.target.width/2 + spessore;
+				return (d.source.x<dxtarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + YY :  "M"+xsource + "," + ysource + "L" + XXX + "," + YYY;}
+			else{
+				q=dytarget-m*dxtarget;
+				XX=(dytarget-d.target.width/4 -q)/m + spessore; XXX=(dytarget+d.target.width/4 -q)/m + spessore ; 
+				YY= dytarget-d.target.width/4 - padding ; YYY=dytarget+d.target.width/4 + padding ; 
+				return (d.source.y<dytarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + YY :  "M"+xsource + "," + ysource + "L" + XXX + "," + YYY;}
+			}
+		if(m < 0){
+			if(m >= -0.5){
+				XX=dxtarget-d.target.width/2 - padding ; XXX=dxtarget+d.target.width/2  + padding; 
+				YY=dytarget-m*d.target.width/2 - spessore ; YYY=dytarget+m*d.target.width/2 + spessore;
+				return (d.source.x<dxtarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + YY :  "M"+xsource + "," + ysource + "L" + XXX + "," + YYY}
+			else{q=dytarget - m*dxtarget;
+				XX=(dytarget-d.target.width/4 -q)/m  - spessore; XXX=(dytarget+d.target.width/4 -q)/m + spessore; 
+				YY=dytarget-d.target.width/4 - padding ; YYY=dytarget+d.target.width/4 + padding;  //(dytarget-d.target.width/4 -q)/m
+				return (d.source.y<dytarget) ? "M"+xsource + "," + ysource + "L" + XX + "," + YY :  "M"+xsource + "," + ysource + "L" + XXX + "," + YYY;}
+			}
+	}
+}
+
+
+function tick() {
+  link
+  	  .attr("d",buildLink)
+  	  .classed("grouped",function(d){if (d.group !== 0){return "false"};});  //se non entra nell if mette true automaticamente ma funziona al contrario sto pezzo  bahh???
+  	
+  label .attr("x", function(d) {
+ 			var spess= (d.type === "link_2") ? 50 : 0;  // l algoritmo inizialmente non era stato pensato per avere due archi tra gli stessi nodi, quindi per permettere di leggere le etichette è sttao aggiunto molto rapidamente questo spessore per permettere di leggere i label di ciascun arco. 
+   			var x= d.source.x< d.target.x  ? (d.target.x-d.source.x)/2+d.source.x + spess: (d.source.x-d.target.x)/2+d.target.x + spess;
+   			return x; })
+      .attr("y", function(d) {
+      		var spess= (d.type === "link_2") ? 30 : 0; 
+      		var y=d.source.y< d.target.y  ? (d.target.y-d.source.y)/2+d.source.y - spess : (d.source.y-d.target.y)/2+d.target.y + spess ;
+      		return y; });
+      
+ rect.attr("x", function(d) { return d.x; })
+      .attr("y", function(d) { return d.y; });
+	
+ text.attr("x", function(d) { return d.x+d.width*0.20; })
+      .attr("y", function(d) { return d.y+d.width/4; });
+      
+}
+
+
+
+
+function dbclickLink(l){
+	l.group = 0;
+	d3.select(this).classed("grouped", l.grouped = false);
+	force.linkDistance(function(l) {
+      			if((l.target.type !== "erd.key") || (l.target.type !== "erd.normal" )){return l.group === 0 ? distance*1.1 : distance*0.3;}
+				if((l.target.type === "erd.key") || (l.target.type === "erd.normal" )){return distance*0.03;}
+   			})
+      		.start();
+}
+
+function onclickLink(l){
+	if (l.group === 0){
+		if ((l.target.type !== "erd.key") && (l.target.type !== "erd.normal" ) && (l.source.type !== "erd.key") && (l.source.type !== "erd.normal" )) {
+			l.group=1;
+			d3.select(this).classed("grouped", l.grouped = true);
+			
+			force.linkDistance(function(l) {
+      			if((l.target.type !== "erd.key") && (l.target.type !== "erd.normal" )){return l.group === 0 ? distance*1.1 : distance*0.3;}
+				if((l.target.type === "erd.key") || (l.target.type === "erd.normal" )){return distance*0.03;}
+   			})
+      		.start();
+      	}
+	}
+}
+
+function dblclick(d) {
+  d3.select(this).classed("fixed", d.fixed = false);
+}
+
+function dragstart(d) {
+  d3.select(this).classed("fixed", d.fixed = true);
+}
+
+function faq(){
+	var faq="The second phase consists in the partitioning of the O-ER diagram we have obtained in the first phase.\nThe aim of this step is to identify entities whose instances are likely to occur together in the same query results. Intuitively, this reduces the number of accesses to the database needed for query answering. ";
+	alert(faq);
+}
+
+function stringify(){
+	//	var string=JSON.stringify(force.nodes().concat(force.links()));
+		var string=JSON.stringify(force.links());
+		//var stringLinks=JSON.stringify(force.links());
+	
+		return string;
+	}
+
+function addForm(){
+		my_form=document.createElement('FORM');
+		my_form.name='myForm';
+		my_form.id='JSONform';
+		my_form.method='POST';
+		my_form.action='OER.html';
+
+
+		my_tb=document.createElement('INPUT');
+		my_tb.type='HIDDEN';
+		my_tb.name='JSONstring';  //importante per richiamare il dato inserito nella servlet
+		my_tb.id='forJSON';
+		my_tb.value='';
+		my_form.appendChild(my_tb);
+		document.body.appendChild(my_form);
+		//my_form.submit();
+	}
+
+addForm();
+	
+function send(){
+		var string=stringify();
+		$('#forJSON').append(string);
+		//$('#JSONform').submit();  togliere commento per rendere operativo
+		alert(string);
+	}
+	
+$('#forward').on('click',send);
+	
+function download(){  //qualcosa non funge caazzoooo
+		//window.open("data:text/json;charset=utf-8," + escape(JSON.stringify(app.graph)));
+		var download={"nodes":[],"links":[]};
+		download.nodes = force.nodes();
+		download.links = force.links();
+		var blob = new Blob([JSON.stringify(download)], {type: "text/json;charset=utf-8"});
+		saveAs(blob, "PartitioningER.json");
+	}
+	
+$('#btn-download').on('click',download);
+
+
+// -------------------------------------------------------------------------------script per leggere l upload
+
+function getFileExtension(filename)  // ottiene l estensione del file caricato
+{
+  var ext = /^.+\.([^.]+)$/.exec(filename);
+  return ext == null ? "" : ext[1];
+}
+function extension(){
+	var file = $('#inputJson').val();
+	var fileExt = getFileExtension(file);
+	return fileExt;
+ }
+
+
+function startRead() {  
+  // obtain input element through DOM 
+  var file = document.getElementById('inputJson').files[0];
+  if(file) {
+  	if(extension()==="json"){
+  	  getAsText(file);
+    }
+	else{
+		var extString="Supported file are only .json created for D3js library !";
+		alert(extString);
+	}
+  }
+}
+ 
+function getAsText(readFile) {
+  var reader = new FileReader();
+   
+  // Read file into memory as UTF-16      
+  reader.readAsText(readFile, "UTF-8");
+   
+  // Handle progress, success, and errors
+  reader.onprogress = updateProgress;
+  reader.onload = loaded;
+  reader.onerror = errorHandler;
+}
+ 
+function updateProgress(evt) {
+  if (evt.lengthComputable) {
+    // evt.loaded and evt.total are ProgressEvent properties
+    var loaded = (evt.loaded / evt.total);
+    if (loaded < 1) {
+      // Increase the prog bar length
+      // style.width = (loaded * 200) + "px";
+      document.getElementById('result').textContent = "caricato il " + loaded +"%";
+    }
+  }
+}
+ var dataL=[];
+function loaded(evt) {  
+  // Obtain the read file data    
+	var fileString = evt.target.result;
+//	var dataL=[];
+ // document.getElementById('result').textContent = fileString;
+ alert(fileString);
+	try{
+		var vuoto =[];
+		mygraph.nodes=vuoto  // non funziona l update delle selections...questo pezzo cancella lo schema per permettere di riscrivere.
+		mygraph.links=vuoto;
+		update();
+		
+		dataL=JSON.parse(fileString).links;
+		prepareLinks(dataL);
+		mygraph.links=dataL;
+		mygraph.nodes=JSON.parse(fileString).nodes;
+     	
+     	update();
+	}catch(e){alert(e)}
+}
+ 
+function errorHandler(evt) {
+  if(evt.target.error.name == "NOT_READABLE_ERR") {
+  //  document.getElementById('result').textContent = "si è verificato un errore nel caricamento";
+    alert("si è verificato un errore nel caricamento");
+  }
+}
+
+function prepareLinks(links){ //serve a portare l oggetto source e target ai relativi indici ndell array .nodes
+	
+	for(link of links){
+		link.source=link.source.id;
+		link.target=link.target.id;
+		//alert(link.source);
+	}
+}
+//-----------------------------------------------------------------------------------------------
+
+function update(){
+
+	force
+      .nodes(mygraph.nodes)
+      .links(mygraph.links);
+      //.start();
+       
+ link=link
+    .data(force.links());
+    
+ link.enter().append("path")
+    .attr("class", "link ")
+    .style("marker-end",  function(d) { return "url(#" + d.kind + ")"; })
+    .on("dblclick", dbclickLink)
+    .on("click", onclickLink);
+
+ link.exit().remove();
+ 
+ var label=svg.append("g").selectAll("text")
+	.data(force.links())
+   .enter().append("text")
+   // .attr("white-space","normal")
+   	.attr("class","labels")
+	.html(function(d){
+  			if(d.labels.length > 0){
+  				var i=0;
+  				var string="<tspan class=\"label\" >";
+  				for(var label of d.labels){
+  					if(i===0){string+=label+"</tspan>";}
+  					else{string+="<tspan class=\"label\" dy="+ 13 +" dx=-"+ 5.05*d.labels[i-1].length +" >"+label+"</tspan>";}
+  					i++;
+  				}return string;
+  			}
+  		});
+      
+ rect = rect
+    .data(force.nodes());
+  
+ rect.enter().append("rect")
+      .attr("class",function(d){var x=d.type.split(".");return x[1];})
+      .attr("width", function(d){return d.width;})
+      .attr("height", function(d){return d.width/2;})
+    .on("dblclick", dblclick)
+    .call(drag);
+
+rect.exit().remove();
+
+ text = text
+    .data(force.nodes());
+
+ text.enter().append("text")
+ 	.attr("class","TEXT1")
+    .text(function(d) { return d.text; });
+    
+ text.exit().remove();
+
+force.start();
+
+		
+}  
+
+$("#rendering").on("click",startRead);
+
+
+</script>
+
+</body>
